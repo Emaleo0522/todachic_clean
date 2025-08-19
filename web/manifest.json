@@ -1,0 +1,81 @@
+{
+    "name": "TODAChic - Gestión de Tienda",
+    "short_name": "TODAChic",
+    "description": "Sistema completo de gestión para tiendas de ropa con control de inventario, ventas y análisis",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#E91E63",
+    "theme_color": "#E91E63",
+    "orientation": "portrait-primary",
+    "categories": ["business", "shopping", "productivity"],
+    "lang": "es",
+    "scope": "/",
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Stock",
+            "short_name": "Stock",
+            "description": "Ver inventario de productos",
+            "url": "/stock",
+            "icons": [
+                {
+                    "src": "icons/Icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Ventas",
+            "short_name": "Ventas",
+            "description": "Registrar nueva venta",
+            "url": "/sales",
+            "icons": [
+                {
+                    "src": "icons/Icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Balance",
+            "short_name": "Balance",
+            "description": "Ver análisis y reportes",
+            "url": "/balance",
+            "icons": [
+                {
+                    "src": "icons/Icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ],
+    "prefer_related_applications": false
+}
