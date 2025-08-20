@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:hive/hive.dart';
 import 'settings.dart';
 
@@ -38,6 +40,9 @@ class Product extends HiveObject {
   @HiveField(10)
   double? costPrice;
 
+  @HiveField(11)
+  String? imageData; // Base64 encoded image data
+
   Product({
     required this.id,
     required this.name,
@@ -50,6 +55,7 @@ class Product extends HiveObject {
     required this.updatedAt,
     this.size,
     this.costPrice,
+    this.imageData,
   });
 
   Product copyWith({
@@ -64,6 +70,7 @@ class Product extends HiveObject {
     DateTime? updatedAt,
     Size? size,
     double? costPrice,
+    String? imageData,
   }) {
     return Product(
       id: id ?? this.id,
@@ -77,6 +84,7 @@ class Product extends HiveObject {
       updatedAt: updatedAt ?? this.updatedAt,
       size: size ?? this.size,
       costPrice: costPrice ?? this.costPrice,
+      imageData: imageData ?? this.imageData,
     );
   }
 
@@ -140,6 +148,19 @@ class Product extends HiveObject {
   // Verificar si hay suficiente stock para una venta
   bool hasEnoughStock(int requiredQuantity) {
     return quantity >= requiredQuantity;
+  }
+
+  // Verificar si el producto tiene imagen
+  bool get hasImage => imageData != null && imageData!.isNotEmpty;
+
+  // Obtener imagen como Uint8List desde Base64
+  Uint8List? get imageBytes {
+    if (!hasImage) return null;
+    try {
+      return base64Decode(imageData!);
+    } catch (e) {
+      return null;
+    }
   }
 
   @override

@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/product.dart';
 import '../../models/categories.dart';
 import '../../data/repositories/product_repository.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/image_utils.dart';
 
 class ProductFormDialog extends ConsumerStatefulWidget {
   final Product? product; // null para crear, Product para editar
@@ -37,6 +40,10 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
   String _categorySearchQuery = '';
   bool _showCategoryDropdown = false;
   
+  // Para la imagen del producto
+  String? _imageData; // Base64 de la imagen
+  bool _isLoadingImage = false;
+  
   bool get _isEditing => widget.product != null;
 
   @override
@@ -56,6 +63,9 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
     _salePriceController.text = product.price.toString();
     _quantityController.text = product.quantity.toString();
     _descriptionController.text = product.description ?? '';
+    
+    // Cargar imagen existente si la hay
+    _imageData = product.imageData;
     
     // Si hay costo y precio, calcular el porcentaje
     if (product.costPrice != null && product.costPrice! > 0) {
@@ -105,6 +115,216 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
     });
   }
 
+  // Mostrar opciones para seleccionar imagen
+  Future<void> _showImagePickerOptions() async {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Tomar foto'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _pickImageFromCamera();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Seleccionar de galería'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _pickImageFromGallery();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.folder),
+                title: const Text('Seleccionar archivo'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _pickImageFromFiles();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Seleccionar imagen desde la cámara
+  Future<void> _pickImageFromCamera() async {
+    setState(() {
+      _isLoadingImage = true;
+    });
+
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        await _processImage(bytes, image.name);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al tomar foto: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingImage = false;
+        });
+      }
+    }
+  }
+
+  // Seleccionar imagen desde la galería
+  Future<void> _pickImageFromGallery() async {
+    setState(() {
+      _isLoadingImage = true;
+    });
+
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        await _processImage(bytes, image.name);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al seleccionar imagen: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingImage = false;
+        });
+      }
+    }
+  }
+
+  // Seleccionar imagen desde archivos (método original)
+  Future<void> _pickImageFromFiles() async {
+    setState(() {
+      _isLoadingImage = true;
+    });
+
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+        withData: true,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        
+        if (file.bytes != null) {
+          await _processImage(file.bytes!, file.name);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al seleccionar archivo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingImage = false;
+        });
+      }
+    }
+  }
+
+  // Procesar imagen seleccionada
+  Future<void> _processImage(Uint8List bytes, String fileName) async {
+    try {
+      // Validar tipo de archivo
+      if (!ImageUtils.isValidImageType(fileName)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Por favor selecciona una imagen válida (JPG, PNG, WEBP)'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Comprimir y convertir a Base64
+      final compressedBase64 = ImageUtils.uint8ListToBase64(bytes);
+
+      setState(() {
+        _imageData = compressedBase64;
+      });
+
+      if (mounted) {
+        final finalSize = ImageUtils.base64ToUint8List(compressedBase64)?.length ?? 0;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Imagen procesada correctamente (${ImageUtils.formatFileSize(finalSize)})'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al procesar imagen: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Remover imagen
+  void _removeImage() {
+    setState(() {
+      _imageData = null;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Imagen removida'),
+        backgroundColor: Colors.blue,
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
   Future<void> _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -128,7 +348,8 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
               description: _descriptionController.text.trim().isNotEmpty
                   ? _descriptionController.text.trim()
                   : null,
-              imageUrl: '', // Campo removido, usar vacío por defecto
+              imageUrl: '', // Mantener compatibilidad
+              imageData: _imageData, // Nueva imagen en Base64
               updatedAt: now,
             )
           : Product(
@@ -141,7 +362,8 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
               description: _descriptionController.text.trim().isNotEmpty
                   ? _descriptionController.text.trim()
                   : null,
-              imageUrl: '', // Campo removido, usar vacío por defecto
+              imageUrl: '', // Mantener compatibilidad
+              imageData: _imageData, // Nueva imagen en Base64
               createdAt: now,
               updatedAt: now,
             );
@@ -695,6 +917,164 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                         },
                       ),
                     ],
+                    const SizedBox(height: AppSpacing.formFieldSpacing),
+
+                    // Sección de imagen del producto
+                    Card(
+                      elevation: 1,
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.photo_camera, 
+                                     size: 20, 
+                                     color: theme.colorScheme.primary),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Foto del Producto',
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  '(Opcional)',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              'Agrega una foto para identificar fácilmente este producto',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            
+                            // Preview de imagen o botón para agregar
+                            if (_imageData != null) ...[
+                              // Mostrar imagen existente
+                              Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.grey.shade300),
+                                ),
+                                child: Column(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(12),
+                                      ),
+                                      child: Image.memory(
+                                        ImageUtils.base64ToUint8List(_imageData!)!,
+                                        height: 120,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(AppSpacing.sm),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              'Tamaño: ${ImageUtils.formatFileSize(ImageUtils.base64ToUint8List(_imageData!)!.length)}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                          ),
+                                          TextButton.icon(
+                                            onPressed: _isLoadingImage ? null : _showImagePickerOptions,
+                                            icon: const Icon(Icons.edit, size: 16),
+                                            label: const Text('Cambiar'),
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: theme.colorScheme.primary,
+                                            ),
+                                          ),
+                                          TextButton.icon(
+                                            onPressed: _removeImage,
+                                            icon: const Icon(Icons.delete, size: 16),
+                                            label: const Text('Quitar'),
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: Colors.red,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ] else ...[
+                              // Botón para agregar imagen
+                              Container(
+                                width: double.infinity,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                    style: BorderStyle.solid,
+                                  ),
+                                  color: Colors.grey.shade50,
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(12),
+                                    onTap: _isLoadingImage ? null : _showImagePickerOptions,
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        if (_isLoadingImage) ...[
+                                          const CircularProgressIndicator(),
+                                          const SizedBox(height: 8),
+                                          const Text('Cargando imagen...'),
+                                        ] else ...[
+                                          Icon(
+                                            Icons.add_a_photo,
+                                            size: 32,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Toca para agregar foto',
+                                            style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'JPG, PNG o WEBP (máx. 5MB)',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade500,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.formFieldSpacing),
 
                     // Descripción

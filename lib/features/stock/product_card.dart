@@ -29,22 +29,55 @@ class ProductCard extends ConsumerWidget {
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
             children: [
-              // Avatar con indicador de stock
+              // Avatar con imagen del producto o ícono por defecto
               Stack(
                 children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(
-                      Icons.inventory_2_outlined,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      size: 24,
+                  GestureDetector(
+                    onTap: product.hasImage ? () => _showImageDialog(context) : null,
+                    child: Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: product.hasImage 
+                            ? Colors.transparent 
+                            : Theme.of(context).colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(16),
+                        border: product.hasImage 
+                            ? Border.all(color: Colors.grey.shade300, width: 1)
+                            : null,
+                      ),
+                      child: product.hasImage
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.memory(
+                                product.imageBytes!,
+                                width: 64,
+                                height: 64,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  // Si hay error al cargar la imagen, mostrar ícono por defecto
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.primaryContainer,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Icon(
+                                      Icons.inventory_2_outlined,
+                                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                      size: 28,
+                                    ),
+                                  );
+                                },
+                              ),
+                            )
+                          : Icon(
+                              Icons.inventory_2_outlined,
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              size: 28,
+                            ),
                     ),
                   ),
+                  // Indicador de stock
                   Positioned(
                     top: -2,
                     right: -2,
@@ -54,6 +87,26 @@ class ProductCard extends ConsumerWidget {
                       showPulse: stockLevel == StockLevel.low,
                     ),
                   ),
+                  // Indicador de imagen disponible
+                  if (product.hasImage)
+                    Positioned(
+                      bottom: -2,
+                      left: -2,
+                      child: Container(
+                        width: 18,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          borderRadius: BorderRadius.circular(9),
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: Icon(
+                          Icons.photo_camera,
+                          color: Colors.white,
+                          size: 10,
+                        ),
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(width: AppSpacing.lg),
@@ -305,5 +358,104 @@ class ProductCard extends ConsumerWidget {
         }
         break;
     }
+  }
+
+  void _showImageDialog(BuildContext context) {
+    if (!product.hasImage) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          product.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+                // Imagen
+                Flexible(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.vertical(
+                        bottom: Radius.circular(12),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(12),
+                      ),
+                      child: Image.memory(
+                        product.imageBytes!,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 200,
+                            child: const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: Colors.white70,
+                                    size: 48,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Error al cargar la imagen',
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

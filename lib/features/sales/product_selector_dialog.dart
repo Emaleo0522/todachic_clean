@@ -184,18 +184,72 @@ class _ProductSelectorDialogState extends ConsumerState<ProductSelectorDialog> {
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
-              // Product icon
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.shopping_bag_outlined,
-                  color: theme.colorScheme.primary,
-                  size: 24,
+              // Product image or icon
+              GestureDetector(
+                onTap: product.hasImage ? () => _showImagePreview(context, product) : null,
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: product.hasImage 
+                        ? Colors.transparent 
+                        : theme.colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: product.hasImage 
+                        ? Border.all(color: Colors.grey.shade300, width: 1)
+                        : null,
+                  ),
+                  child: product.hasImage
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Stack(
+                            children: [
+                              Image.memory(
+                                product.imageBytes!,
+                                width: 56,
+                                height: 56,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.primary.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      Icons.shopping_bag_outlined,
+                                      color: theme.colorScheme.primary,
+                                      size: 24,
+                                    ),
+                                  );
+                                },
+                              ),
+                              // Indicator overlay para mostrar que se puede hacer click
+                              if (product.hasImage)
+                                Positioned(
+                                  top: 2,
+                                  right: 2,
+                                  child: Container(
+                                    width: 16,
+                                    height: 16,
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.7),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.zoom_in,
+                                      color: Colors.white,
+                                      size: 10,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        )
+                      : Icon(
+                          Icons.shopping_bag_outlined,
+                          color: theme.colorScheme.primary,
+                          size: 24,
+                        ),
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -312,6 +366,105 @@ class _ProductSelectorDialogState extends ConsumerState<ProductSelectorDialog> {
     showDialog(
       context: context,
       builder: (context) => SaleFormDialog(product: product),
+    );
+  }
+
+  void _showImagePreview(BuildContext context, Product product) {
+    if (!product.hasImage) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.8,
+              maxHeight: MediaQuery.of(context).size.height * 0.6,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          product.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                      ),
+                    ],
+                  ),
+                ),
+                // Imagen
+                Flexible(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.vertical(
+                        bottom: Radius.circular(12),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(12),
+                      ),
+                      child: Image.memory(
+                        product.imageBytes!,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 200,
+                            child: const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: Colors.white70,
+                                    size: 32,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Error al cargar la imagen',
+                                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

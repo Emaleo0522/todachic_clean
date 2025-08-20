@@ -1,11 +1,11 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
-export "FLUTTER_ROOT=/home/ema/flutter_sdk"
-export "FLUTTER_APPLICATION_PATH=/home/ema/todachic_clean"
+export "FLUTTER_ROOT=/home/lucasv/flutter"
+export "FLUTTER_APPLICATION_PATH=/home/lucasv/todachic_clean"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
 export "FLUTTER_BUILD_DIR=build"
-export "FLUTTER_BUILD_NAME=1.2.0"
-export "FLUTTER_BUILD_NUMBER=3"
+export "FLUTTER_BUILD_NAME=1.4.0"
+export "FLUTTER_BUILD_NUMBER=5"
 export "DART_OBFUSCATION=false"
 export "TRACK_WIDGET_CREATION=true"
 export "TREE_SHAKE_ICONS=false"

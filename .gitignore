@@ -41,3 +41,32 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Web related (exclude build, but keep web source)
+# /web/
+
+# Local environment
+.env
+.env.local
+.env.production.local
+.env.test.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Build files
+*.tar.gz
+*.zip
+
+# Local storage (Hive)
+*.hive
+*.lock
+
+# Packages file (regenerated)
+.packages
