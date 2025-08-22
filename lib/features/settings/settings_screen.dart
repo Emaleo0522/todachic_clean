@@ -193,7 +193,7 @@ class SettingsScreen extends ConsumerWidget {
         ListTile(
           leading: const Icon(Icons.info),
           title: const Text('Versión'),
-          subtitle: const Text('TODAChic v1.4.0 - Enhanced Image System'),
+          subtitle: const Text('TODAChic v1.7.0 - QR Real Download & Mobile Optimized'),
         ),
         ListTile(
           leading: const Icon(Icons.code),
@@ -239,7 +239,7 @@ class SettingsScreen extends ConsumerWidget {
 
       // Create export data structure
       final exportData = {
-        'version': '1.4.0',
+        'version': '1.7.0',
         'exportDate': DateTime.now().toIso8601String(),
         'storeName': settings.storeName,
         'data': {

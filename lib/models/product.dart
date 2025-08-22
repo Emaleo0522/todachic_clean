@@ -43,6 +43,9 @@ class Product extends HiveObject {
   @HiveField(11)
   String? imageData; // Base64 encoded image data
 
+  @HiveField(12)
+  String? qrCode; // QR code data for product identification
+
   Product({
     required this.id,
     required this.name,
@@ -56,6 +59,7 @@ class Product extends HiveObject {
     this.size,
     this.costPrice,
     this.imageData,
+    this.qrCode,
   });
 
   Product copyWith({
@@ -71,6 +75,7 @@ class Product extends HiveObject {
     Size? size,
     double? costPrice,
     String? imageData,
+    String? qrCode,
   }) {
     return Product(
       id: id ?? this.id,
@@ -85,6 +90,7 @@ class Product extends HiveObject {
       size: size ?? this.size,
       costPrice: costPrice ?? this.costPrice,
       imageData: imageData ?? this.imageData,
+      qrCode: qrCode ?? this.qrCode,
     );
   }
 
@@ -152,6 +158,9 @@ class Product extends HiveObject {
 
   // Verificar si el producto tiene imagen
   bool get hasImage => imageData != null && imageData!.isNotEmpty;
+
+  // Verificar si el producto tiene código QR
+  bool get hasQrCode => qrCode != null && qrCode!.isNotEmpty;
 
   // Obtener imagen como Uint8List desde Base64
   Uint8List? get imageBytes {

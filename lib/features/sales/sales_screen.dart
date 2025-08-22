@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/empty_state.dart';
 import 'product_selector_dialog.dart';
 import 'sale_form_dialog.dart';
+import 'qr_scanner_dialog.dart';
 import '../../widgets/confirmation_dialog.dart';
 
 // Provider para filtro de fecha
@@ -184,10 +185,24 @@ class SalesScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddSaleDialog(context, ref),
-        child: const Icon(Icons.add),
-        tooltip: 'Nueva Venta',
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: "qr_scan",
+            onPressed: () => _showQrScanner(context),
+            backgroundColor: Colors.green,
+            child: const Icon(Icons.qr_code_scanner),
+            tooltip: 'Escanear QR',
+          ),
+          const SizedBox(height: 8),
+          FloatingActionButton(
+            heroTag: "add_sale",
+            onPressed: () => _showAddSaleDialog(context, ref),
+            child: const Icon(Icons.add),
+            tooltip: 'Nueva Venta',
+          ),
+        ],
       ),
     );
   }
@@ -516,6 +531,10 @@ class SalesScreen extends ConsumerWidget {
       context: context,
       builder: (context) => const ProductSelectorDialog(),
     );
+  }
+
+  void _showQrScanner(BuildContext context) {
+    showQrScannerDialog(context);
   }
 
   void _showEditSaleDialog(BuildContext context, WidgetRef ref, Sale sale) {

@@ -325,6 +325,11 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
     );
   }
 
+  // Generar código QR único para el producto
+  String _generateQrCode(String productId) {
+    return 'TODACHIC:$productId';
+  }
+
   Future<void> _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -338,6 +343,9 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
           ? double.tryParse(_costPriceController.text.trim()) 
           : null;
           
+      final productId = _isEditing ? widget.product!.id : const Uuid().v4();
+      final qrCode = _isEditing ? widget.product!.qrCode : _generateQrCode(productId);
+      
       final product = _isEditing
           ? widget.product!.copyWith(
               name: _nameController.text.trim(),
@@ -353,7 +361,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
               updatedAt: now,
             )
           : Product(
-              id: const Uuid().v4(),
+              id: productId,
               name: _nameController.text.trim(),
               category: _selectedCategory ?? '',
               price: double.parse(_salePriceController.text),
@@ -364,6 +372,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                   : null,
               imageUrl: '', // Mantener compatibilidad
               imageData: _imageData, // Nueva imagen en Base64
+              qrCode: qrCode, // Código QR único
               createdAt: now,
               updatedAt: now,
             );
@@ -417,6 +426,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.cardBorderRadius),
       ),
+      insetPadding: const EdgeInsets.all(AppSpacing.sm), // Reducir margen del diálogo
       child: GestureDetector(
         onTap: () {
           // Cerrar dropdown de categorías al hacer tap fuera
@@ -428,14 +438,21 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
         },
         child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+        height: MediaQuery.of(context).size.height * 0.85, // Más responsive
+        constraints: BoxConstraints(
+          maxWidth: 500, 
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max, // Cambiar a max para mejor control
           children: [
-            // Header
+            // Header - Reducir padding
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md, 
+                vertical: AppSpacing.sm, // Reducir padding vertical
+              ),
               decoration: BoxDecoration(
                 gradient: AppGradients.primary,
                 borderRadius: const BorderRadius.vertical(
@@ -452,7 +469,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                   Expanded(
                     child: Text(
                       _isEditing ? 'Editar Producto' : 'Nuevo Producto',
-                      style: theme.textTheme.titleLarge?.copyWith(
+                      style: theme.textTheme.titleMedium?.copyWith( // Reducir tamaño del título
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
@@ -466,12 +483,15 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
               ),
             ),
 
-            // Form
+            // Form - Hacer scrollable y reducir padding
             Expanded(
               child: Form(
                 key: _formKey,
                 child: ListView(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
                   children: [
                     // Nombre
                     TextFormField(
@@ -489,7 +509,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                       },
                       textCapitalization: TextCapitalization.words,
                     ),
-                    const SizedBox(height: AppSpacing.formFieldSpacing),
+                    const SizedBox(height: AppSpacing.sm),
 
                     // Categoría con buscador
                     Column(
@@ -613,7 +633,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.formFieldSpacing),
+                    const SizedBox(height: AppSpacing.sm),
 
                     // Costo básico
                     TextFormField(
@@ -643,7 +663,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: AppSpacing.formFieldSpacing),
+                    const SizedBox(height: AppSpacing.sm),
 
                     // Calculadora de precio
                     Card(
@@ -822,7 +842,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.formFieldSpacing),
+                    const SizedBox(height: AppSpacing.sm),
 
                     // Precio de venta
                     TextFormField(
@@ -849,7 +869,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                       },
                     ),
                     
-                    const SizedBox(height: AppSpacing.formFieldSpacing),
+                    const SizedBox(height: AppSpacing.sm),
                     
                     // Cantidad (debajo del precio de venta)
                     TextFormField(
@@ -917,7 +937,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                         },
                       ),
                     ],
-                    const SizedBox(height: AppSpacing.formFieldSpacing),
+                    const SizedBox(height: AppSpacing.sm),
 
                     // Sección de imagen del producto
                     Card(
@@ -1075,7 +1095,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.formFieldSpacing),
+                    const SizedBox(height: AppSpacing.sm),
 
                     // Descripción
                     TextFormField(
@@ -1093,16 +1113,19 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
               ),
             ),
 
-            // Action buttons
+            // Action buttons - Reducir padding
             Container(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm, // Reducir padding vertical
+              ),
               child: Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
                       onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm), // Reducir padding del botón
                       ),
                       child: const Text('Cancelar'),
                     ),
@@ -1112,7 +1135,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _saveProduct,
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm), // Reducir padding del botón
                         backgroundColor: theme.colorScheme.primary,
                         foregroundColor: Colors.white,
                       ),
